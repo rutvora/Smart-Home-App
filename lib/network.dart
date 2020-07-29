@@ -73,6 +73,9 @@ class MQTT {
   }
 }
 
+//Sample post function
+//post("URL", body: "body");
+
 void test() {
   Future<InternetAddress> addr = resolveMDNS();
   addr.then((value) {
