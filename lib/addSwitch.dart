@@ -2,18 +2,25 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:iot_home/controllers.dart';
-import 'package:iot_home/globalVariables.dart';
+import 'package:iot_home/globals.dart';
 
+/// Menu to select available toggles and add them to the room's list.
+/// Note: A single device may be added as both a toggle and a dimmer.
 class AddToggles extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _AddTogglesState();
 }
 
 class _AddTogglesState extends State<AddToggles> {
-  final double _padding = 10;
-  List<bool> _selected = List.filled(9, false);
-  List<bool> _on = List.filled(9, false);
+  final double padding = 10;
 
+  // Toggles selected to be added
+  List<bool> selected = List.filled(9, false);
+
+  //Toggles currently supposed to be on
+  List<bool> on = List.filled(9, false);
+
+  /// Shows the arduino pin numbers not currently added to a room.
   List<Widget> getAvailableToggles() {
     List widgets = List<Widget>();
     List<bool> pins = List.filled(9, false);
@@ -31,37 +38,43 @@ class _AddTogglesState extends State<AddToggles> {
           children: [
             Toggle(i, "Pin " + i.toString(), false, (isOn) {
               setState(() {
-                _on[i] = isOn;
+                on[i] = isOn;
               });
             }),
             FlatButton(
-                color: _selected[i]
+                color: selected[i]
                     ? Colors.lightGreen
-                    : _on[i] ? Colors.lightBlue : Theme.of(context).cardColor,
+                    : on[i] ? Colors.lightBlue : Theme
+                    .of(context)
+                    .cardColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 onPressed: () {
                   setState(() {
-                    _selected[i] = !_selected[i];
+                    selected[i] = !selected[i];
                   });
                 },
                 child: Row(children: [
                   Icon(
-                    _selected[i] ? Icons.check : Icons.add,
-                    color: _selected[i] || _on[i]
+                    selected[i] ? Icons.check : Icons.add,
+                    color: selected[i] || on[i]
                         ? Colors.white
-                        : Theme.of(context).iconTheme.color,
+                        : Theme
+                        .of(context)
+                        .iconTheme
+                        .color,
                   ),
                   Flexible(
                       child: Center(
-                          child: Text(_selected[i] ? "Added" : "Add",
+                          child: Text(selected[i] ? "Added" : "Add",
                               style: TextStyle(
                                   fontSize: 18,
-                                  color: _selected[i] || _on[i]
+                                  color: selected[i] || on[i]
                                       ? Colors.white
-                                      : Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .color))))
+                                      : Theme
+                                      .of(context)
+                                      .textTheme
+                                      .bodyText1
+                                      .color))))
                 ])),
           ],
         )));
@@ -77,24 +90,28 @@ class _AddTogglesState extends State<AddToggles> {
         ),
         body: GridView.count(
           crossAxisCount:
-              MediaQuery.of(context).orientation == Orientation.portrait
-                  ? 2
-                  : 4,
+          MediaQuery
+              .of(context)
+              .orientation == Orientation.portrait
+              ? 2
+              : 4,
           childAspectRatio:
-              MediaQuery.of(context).orientation == Orientation.portrait
-                  ? 1
-                  : 1.05,
+          MediaQuery
+              .of(context)
+              .orientation == Orientation.portrait
+              ? 1
+              : 1.05,
           children: getAvailableToggles(),
-          padding: EdgeInsets.all(_padding),
+          padding: EdgeInsets.all(padding),
           shrinkWrap: true,
         ),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               List toggles =
-                  GlobalVariables.rooms[GlobalVariables.currentRoom]["toggles"];
+              GlobalVariables.rooms[GlobalVariables.currentRoom]["toggles"];
 
-              for (int i = 0; i < _selected.length; i++) {
-                if (_selected[i]) {
+              for (int i = 0; i < selected.length; i++) {
+                if (selected[i]) {
                   Map map = Map();
                   map["name"] = "Pin " + i.toString();
                   map["pin"] = i;
@@ -112,6 +129,8 @@ class _AddTogglesState extends State<AddToggles> {
   }
 }
 
+/// Menu to select available dimmers and add them to the room's list.
+/// Note: A single device may be added as both a toggle and a dimmer.
 class AddDimmers extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _AddDimmersState();
@@ -119,13 +138,16 @@ class AddDimmers extends StatefulWidget {
 
 class _AddDimmersState extends State<AddDimmers> {
   final double padding = 10;
-  List<bool> _selected = List.filled(9, false);
 
+  // Dimmers currently selected to be added to the room
+  List<bool> selected = List.filled(9, false);
+
+  /// Shows the arduino pin numbers not currently added to a room.
   List<Widget> getAvailableDimmers() {
     List widgets = List<Widget>();
     List<bool> pins = List.filled(9, false);
     List dimmers =
-        GlobalVariables.rooms[GlobalVariables.currentRoom]["dimmers"];
+    GlobalVariables.rooms[GlobalVariables.currentRoom]["dimmers"];
     for (var dimmer in dimmers) {
       pins[dimmer["pin"]] = true;
     }
@@ -138,33 +160,39 @@ class _AddDimmersState extends State<AddDimmers> {
           children: [
             Dimmer(i, "Pin " + i.toString(), false),
             FlatButton(
-                color: _selected[i]
+                color: selected[i]
                     ? Colors.lightGreen
-                    : Theme.of(context).cardColor,
+                    : Theme
+                    .of(context)
+                    .cardColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 onPressed: () {
                   setState(() {
-                    _selected[i] = !_selected[i];
+                    selected[i] = !selected[i];
                   });
                 },
                 child: Row(children: [
                   Icon(
-                    _selected[i] ? Icons.check : Icons.add,
-                    color: _selected[i]
+                    selected[i] ? Icons.check : Icons.add,
+                    color: selected[i]
                         ? Colors.white
-                        : Theme.of(context).iconTheme.color,
+                        : Theme
+                        .of(context)
+                        .iconTheme
+                        .color,
                   ),
                   Expanded(
                       child: Center(
-                          child: Text(_selected[i] ? "Added" : "Add",
+                          child: Text(selected[i] ? "Added" : "Add",
                               style: TextStyle(
                                   fontSize: 18,
-                                  color: _selected[i]
+                                  color: selected[i]
                                       ? Colors.white
-                                      : Theme.of(context)
-                                          .textTheme
-                                          .bodyText1
-                                          .color))))
+                                      : Theme
+                                      .of(context)
+                                      .textTheme
+                                      .bodyText1
+                                      .color))))
                 ])),
           ],
         )));
@@ -194,10 +222,10 @@ class _AddDimmersState extends State<AddDimmers> {
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               List dimmers =
-                  GlobalVariables.rooms[GlobalVariables.currentRoom]["dimmers"];
+              GlobalVariables.rooms[GlobalVariables.currentRoom]["dimmers"];
 
-              for (int i = 0; i < _selected.length; i++) {
-                if (_selected[i]) {
+              for (int i = 0; i < selected.length; i++) {
+                if (selected[i]) {
                   Map map = Map();
                   map["name"] = "Pin " + i.toString();
                   map["pin"] = i;

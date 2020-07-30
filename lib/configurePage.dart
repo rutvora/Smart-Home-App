@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'globalVariables.dart';
+import 'globals.dart';
 
 class Configure extends StatefulWidget {
   @override

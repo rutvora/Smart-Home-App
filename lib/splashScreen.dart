@@ -5,7 +5,7 @@ import 'package:iot_home/dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splashscreen/splashscreen.dart';
 
-import 'globalVariables.dart';
+import 'globals.dart';
 
 class Splash extends StatefulWidget {
   @override
@@ -13,13 +13,13 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
-  Future<void> initialize(BuildContext context) async {
+  Future<void> initialize() async {
     Future<SharedPreferences> sharedPrefsFuture =
         SharedPreferences.getInstance();
     sharedPrefsFuture.then((preferences) {
       GlobalVariables.prefs = preferences;
       GlobalVariables.prefs.setString("rooms",
-          '{"room name": {"toggles": [{"name": "name", "pin": 1, "type": "bulb"}, {"name": "name", "pin": 2, "type": "bulb"}], "dimmers": [{"name": "name", "pin": 2, "type": "dimmable LED"}]}}');
+          '{"hostname": {"name":"custom room name", "toggles": [{"name": "name", "pin": 1, "type": "bulb"}, {"name": "name", "pin": 2, "type": "bulb"}], "dimmers": [{"name": "name", "pin": 2, "type": "dimmable LED"}]}}');
       String rooms = GlobalVariables.prefs.getString("rooms");
       if (rooms != null) {
         GlobalVariables.rooms = jsonDecode(rooms);
@@ -30,8 +30,13 @@ class _SplashState extends State<Splash> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    initialize();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    initialize(context);
     return new SplashScreen(
         seconds: 0,
         navigateAfterSeconds:

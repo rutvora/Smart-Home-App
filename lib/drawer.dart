@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iot_home/globalVariables.dart';
+import 'package:iot_home/globals.dart';
 import 'package:iot_home/room.dart';
 
 class MyDrawer extends StatefulWidget {
@@ -8,6 +8,12 @@ class MyDrawer extends StatefulWidget {
 }
 
 class _MyDrawerState extends State<MyDrawer> {
+  /// Returns icon based on the room name
+  /// Currently works for rooms containing the following names:
+  /// Bed: Icons.local_hotel
+  /// Hall/Living/Drawing: Icons.tv
+  /// Dining: Icons.local_dining
+  /// Kitchen: Icons.kitchen
   IconData getIcon(String room) {
     if (room.toLowerCase().contains("bed"))
       return Icons.local_hotel;
@@ -48,7 +54,7 @@ class _MyDrawerState extends State<MyDrawer> {
     for (String room in rooms) {
       var icon = getIcon(room);
       var listTile = ListTile(
-        title: Text(room),
+        title: Text(GlobalVariables.rooms[room]["name"]),
         leading: Icon(icon),
         onTap: () {
           Room.changeRoom(room);

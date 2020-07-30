@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:iot_home/addSwitch.dart';
-import 'package:iot_home/globalVariables.dart';
+import 'package:iot_home/globals.dart';
 
 import 'controllers.dart';
 
+/// Returns the room screen with toggles and dimmers.
+/// Provides a static function [changeRoom] to change the room when browsing rooms
 class Room extends StatefulWidget {
   static var _roomState;
 
