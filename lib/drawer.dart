@@ -34,28 +34,55 @@ class _MyDrawerState extends State<MyDrawer> {
 
     //Drawer Header
     var drawerHeader = DrawerHeader(
-      decoration: BoxDecoration(
-        color: Colors.blue,
-      ),
-      child: Text(
-        (GlobalVariables.prefs.getString("deviceName") == null
-            ? "Null"
-            : "DeviceName"),
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
+        padding: EdgeInsets.all(0),
+        decoration: BoxDecoration(
+          color: Colors.blue,
         ),
-      ),
-    );
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            child: IconButton(
+              icon: Icon(
+                Icons.edit,
+                color: Colors.white,
+              ),
+              onPressed: () {
+//                Navigator.of(context).pop();
+                editHostName();
+              },
+            ),
+            alignment: Alignment.bottomRight,
+          ),
+          Row(children: [
+            Icon(Icons.person, size: 80, color: Colors.white),
+            Expanded(
+                child: Center(
+                    child: Text(
+              (GlobalVariables.prefs.getString("deviceName") == null
+                  ? "Null"
+                  : GlobalVariables.prefs.getString("deviceName")),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              ),
+            ))),
+          ])
+        ]));
     widgets.add(drawerHeader);
 
     // Add rooms
     var rooms = GlobalVariables.rooms.keys;
     for (String room in rooms) {
-      var icon = getIcon(room);
+      var icon = getIcon(GlobalVariables.rooms[room]["name"]);
       var listTile = ListTile(
         title: Text(GlobalVariables.rooms[room]["name"]),
         leading: Icon(icon),
+        trailing: IconButton(
+          icon: Icon(Icons.edit),
+          onPressed: () {
+            Navigator.of(context).pop();
+            EditRoomNameDialog.show(context, room);
+          },
+        ),
         onTap: () {
           Room.changeRoom(room);
           Navigator.pop(context);
@@ -65,15 +92,15 @@ class _MyDrawerState extends State<MyDrawer> {
     }
 
     // Add "add Room" option
-    var addRoom = ListTile(
-      title: Text("Add Room"),
-      leading: Icon(Icons.add),
+    var discoverRoomsButton = ListTile(
+      title: Text("Find New Rooms"),
+      leading: Icon(Icons.refresh),
       onTap: () {
         Navigator.of(context).pop();
-        AddRoomDialog.show(context);
+        discoverRooms(context);
       },
     );
-    widgets.add(addRoom);
+    widgets.add(discoverRoomsButton);
     return widgets;
   }
 

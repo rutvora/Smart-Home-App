@@ -21,7 +21,9 @@ class Toggle extends StatefulWidget {
   final bool _isRoom;
   final Function _changeListener;
 
-  Toggle(this._pin, this._name, [this._isRoom = true, this._changeListener]);
+  Toggle(this._pin, this._name, Key key,
+      [this._isRoom = true, this._changeListener])
+      : super(key: key);
 
   @override
   State<Toggle> createState() =>
@@ -29,14 +31,14 @@ class Toggle extends StatefulWidget {
 }
 
 class _ToggleState extends State<Toggle> {
-  int _pin;
-  String _name;
-  bool _on = false;
-  final bool _isRoom;
+  final int pin;
+  String name;
+  bool on = false;
+  final bool isRoom;
   final Function changeListener;
   final double padding = 10;
 
-  _ToggleState(this._pin, this._name, this._isRoom, this.changeListener);
+  _ToggleState(this.pin, this.name, this.isRoom, this.changeListener);
 
   void showEditNameDialogBox() {
     TextEditingController _textBoxCtrl = TextEditingController();
@@ -62,7 +64,7 @@ class _ToggleState extends State<Toggle> {
                   List toggles = GlobalVariables
                       .rooms[GlobalVariables.currentRoom]["toggles"];
                   for (int i = 0; i < toggles.length; i++) {
-                    if (toggles[i]["pin"] == _pin) {
+                    if (toggles[i]["pin"] == pin) {
                       toggles[i]["name"] = _textBoxCtrl.text;
                       break;
                     }
@@ -71,9 +73,10 @@ class _ToggleState extends State<Toggle> {
                       ["toggles"] = toggles;
                   GlobalVariables.prefs
                       .setString("rooms", jsonEncode(GlobalVariables.rooms));
+                  setState(() {
+                    name = _textBoxCtrl.text;
+                  });
                   Navigator.of(context).pop();
-                  //TODO: Not refreshing the page for some reason
-                  Room.changeRoom(GlobalVariables.currentRoom);
                 },
                 child: Text("OK")),
             new FlatButton(
@@ -88,19 +91,19 @@ class _ToggleState extends State<Toggle> {
     showDialog(
         context: context,
         child: AlertDialog(
-            title: Center(child: Text(_name)),
+            title: Center(child: Text(name)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Card(
                     child: FlatButton(
-                  child: Text("Delete"),
-                  onPressed: () {
-                    List toggles = GlobalVariables
-                        .rooms[GlobalVariables.currentRoom]["toggles"];
+                      child: Text("Delete"),
+                      onPressed: () {
+                        List toggles = GlobalVariables
+                            .rooms[GlobalVariables.currentRoom]["toggles"];
                     for (var toggle in toggles) {
-                      if (toggle["pin"] == _pin) {
+                      if (toggle["pin"] == pin) {
                         toggles.remove(toggle);
                         break;
                       }
@@ -129,9 +132,9 @@ class _ToggleState extends State<Toggle> {
   /// Makes the actual toggle MQTT call
   void toggleSwitch() {
     MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
-    builder.addByte(_pin); //pin number
+    builder.addByte(pin); //pin number
     builder.addBool(val: false); //isPWM
-    builder.addBool(val: _on); //State
+    builder.addBool(val: on); //State
     //TODO: Set topic
     GlobalVariables.localBroker.publish("/test", builder);
   }
@@ -141,7 +144,9 @@ class _ToggleState extends State<Toggle> {
     return Card(
         child: InkWell(
           child: Container(
-              color: _on ? Colors.lightBlue : Theme.of(context).cardColor,
+              color: on ? Colors.lightBlue : Theme
+                  .of(context)
+                  .cardColor,
               child: ListView(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
@@ -150,10 +155,10 @@ class _ToggleState extends State<Toggle> {
                       child: Container(
                           padding: EdgeInsets.all(padding),
                           child: Text(
-                            _name,
+                            name,
                             style: TextStyle(
                                 fontSize: 20,
-                                color: _on
+                                color: on
                                     ? Colors.white
                                     : Theme
                                     .of(context)
@@ -170,7 +175,7 @@ class _ToggleState extends State<Toggle> {
                               child: Icon(
                                 Octicons.light_bulb,
                                 size: 80,
-                                color: _on
+                                color: on
                                     ? Colors.yellow
                                     : Theme
                                     .of(context)
@@ -182,14 +187,14 @@ class _ToggleState extends State<Toggle> {
               )),
           onTap: () {
             setState(() {
-              _on = !_on;
+              on = !on;
             });
-            if (changeListener != null) changeListener(_on);
+            if (changeListener != null) changeListener(on);
             toggleSwitch();
           },
           onLongPress: () => onLongPressToggle(),
         ),
-        margin: EdgeInsets.all(_isRoom ? padding : 0));
+        margin: EdgeInsets.all(isRoom ? padding : 0));
   }
 }
 
@@ -203,7 +208,8 @@ class Dimmer extends StatefulWidget {
   final String _name;
   final bool _isRoom;
 
-  Dimmer(this._pin, this._name, [this._isRoom = true]);
+  Dimmer(this._pin, this._name, Key key, [this._isRoom = true])
+      : super(key: key);
 
   @override
   State<Dimmer> createState() => _DimmerState(_pin, _name, _isRoom);
@@ -349,6 +355,7 @@ class _DimmerState extends State<Dimmer> {
                           }))
                 ],
               ),
+              onLongPress: onLongPress,
             ),
             margin: EdgeInsets.all(_isRoom ? padding : 0)));
   }

@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:iot_home/addSwitch.dart';
 import 'package:iot_home/globals.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 import 'controllers.dart';
+import 'loadingAnimations.dart';
+import 'network.dart';
 
 /// Returns the room screen with toggles and dimmers.
 /// Provides a static function [changeRoom] to change the room when browsing rooms
@@ -36,13 +41,41 @@ class _RoomState extends State<Room> {
 
   final double padding = 10;
 
+  /// Connects to broker and sets callback for connection change status
+  void initialize() async {
+    ProgressDialog progressDialog;
+    progressDialog = pleaseWait(context, "Connecting to broker...");
+    await progressDialog.show();
+    InternetAddress broker;
+    while (broker == null) {
+      broker = await resolveMDNS('broker');
+    }
+    GlobalVariables.localBroker = MQTT(broker, (connected) async {
+      if (!connected && !progressDialog.isShowing()) {
+        await progressDialog.show();
+      } else if (connected && progressDialog.isShowing()) {
+        // Hacky fix as directly calling hide doesn't work when the status changes too quickly
+        await progressDialog.hide();
+      }
+    });
+    GlobalVariables.localBroker.connectToBroker();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => initialize());
+  }
+
   List<Widget> getToggles(BuildContext context) {
     List<Widget> widgets = List<Widget>();
     Map room = GlobalVariables.rooms[GlobalVariables.currentRoom];
     List toggles = (room["toggles"]);
     if (toggles != null) {
       toggles.forEach((toggle) {
-        widgets.add(Toggle(toggle["pin"], toggle["name"]));
+        print(toggle["name"]);
+        widgets.add(Toggle(toggle["pin"], toggle["name"],
+            Key(GlobalVariables.currentRoom + toggle["pin"].toString())));
       });
     }
     widgets.add(Card(
@@ -75,7 +108,8 @@ class _RoomState extends State<Room> {
     List dimmers = (room["dimmers"]);
     if (dimmers != null) {
       dimmers.forEach((dimmer) {
-        widgets.add(Dimmer(dimmer["pin"], dimmer["name"]));
+        widgets.add(Dimmer(dimmer["pin"], dimmer["name"],
+            Key(GlobalVariables.currentRoom + dimmer["pin"].toString())));
       });
     }
     widgets.add(Card(
@@ -107,12 +141,17 @@ class _RoomState extends State<Room> {
     if (GlobalVariables.currentRoom == null) {
       if (GlobalVariables.rooms.length == 0)
         return Center(
-            child: RaisedButton(
-          child: Text("Add room"),
-          onPressed: () {
-            AddRoomDialog.show(context);
-          },
-        ));
+            child: Card(
+                color: Theme.of(context).buttonColor,
+                child: FlatButton(
+                  child: Text(
+                    "Find New Rooms",
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  onPressed: () {
+                    discoverRooms(context);
+                  },
+                )));
       else
         GlobalVariables.currentRoom = GlobalVariables.rooms.keys.first;
     }
@@ -144,33 +183,39 @@ class _RoomState extends State<Room> {
   }
 }
 
-class AddRoomDialog extends StatefulWidget {
-  static show(BuildContext context) {
+class EditRoomNameDialog extends StatefulWidget {
+  final String _room;
+
+  EditRoomNameDialog(this._room);
+
+  static show(BuildContext context, String room) {
     showDialog(
-      child: AddRoomDialog(),
+      child: EditRoomNameDialog(room),
       context: context,
     );
   }
 
   @override
-  _AddRoomDialogState createState() => _AddRoomDialogState();
+  _EditRoomNameDialogState createState() => _EditRoomNameDialogState(_room);
 }
 
-class _AddRoomDialogState extends State<AddRoomDialog> {
+class _EditRoomNameDialogState extends State<EditRoomNameDialog> {
   TextEditingController _textBoxCtrl = TextEditingController();
   FocusNode _textBoxFocus = FocusNode();
+  String room;
+
+  _EditRoomNameDialogState(this.room);
 
   @override
   Widget build(BuildContext context) {
     return new AlertDialog(
-      title: Text("Add Room"),
+      title: Center(child: Text(GlobalVariables.rooms[room]["name"])),
       content: TextField(
         controller: _textBoxCtrl,
         keyboardType: TextInputType.text,
         focusNode: _textBoxFocus,
         autofocus: true,
-        decoration:
-            InputDecoration(hintText: "Room Name (Same as configuration)"),
+        decoration: InputDecoration(hintText: "New Room Name"),
       ),
       actions: <Widget>[
         new FlatButton(
@@ -179,22 +224,40 @@ class _AddRoomDialogState extends State<AddRoomDialog> {
                 _textBoxFocus.requestFocus();
                 return;
               }
-              Map room = Map<String, List>();
-              room["toggles"] = List();
-              room["dimmers"] = List();
-              GlobalVariables.rooms[_textBoxCtrl.text] = room;
+              GlobalVariables.rooms[room]["name"] = _textBoxCtrl.text;
               String s = jsonEncode(GlobalVariables.rooms);
               GlobalVariables.prefs.setString("rooms", s);
               Navigator.of(context).pop();
-              Room.changeRoom(_textBoxCtrl.text);
-              //TODO: Make the snackBar work
-//              Scaffold.of(context)
-//                  .showSnackBar(SnackBar(content: Text("Room Added")));
             },
-            child: Text("Add")),
+            child: Text("OK")),
         new FlatButton(
             onPressed: () => Navigator.of(context).pop(), child: Text("Cancel"))
       ],
     );
   }
+}
+
+void discoverRooms(BuildContext context) {
+  ProgressDialog progressDialog = pleaseWait(context);
+  progressDialog.show();
+  GlobalVariables.localBroker.subscribe("/discoverRooms/response", (c) {
+    final MqttPublishMessage recMess = c[0].payload;
+    final pt =
+    MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+    print(pt);
+    if (GlobalVariables.rooms.containsKey(pt)) return;
+    Map emptyRoom = Map();
+    emptyRoom["toggles"] = List();
+    emptyRoom["dimmers"] = List();
+    emptyRoom["name"] = pt;
+    GlobalVariables.rooms[pt] = emptyRoom;
+    GlobalVariables.prefs.setString("rooms", jsonEncode(GlobalVariables.rooms));
+  });
+  MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
+  builder.addString("Get rooms"); //Just to have a non-null message
+  GlobalVariables.localBroker.publish("/discoverRooms", builder);
+  Future.delayed(Duration(seconds: 10)).then((_) {
+    GlobalVariables.localBroker.unsubscribe("/discoverRooms/response");
+    progressDialog.hide();
+  });
 }

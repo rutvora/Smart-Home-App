@@ -18,11 +18,14 @@ class _SplashState extends State<Splash> {
         SharedPreferences.getInstance();
     sharedPrefsFuture.then((preferences) {
       GlobalVariables.prefs = preferences;
-      GlobalVariables.prefs.setString("rooms",
-          '{"hostname": {"name":"custom room name", "toggles": [{"name": "name", "pin": 1, "type": "bulb"}, {"name": "name", "pin": 2, "type": "bulb"}], "dimmers": [{"name": "name", "pin": 2, "type": "dimmable LED"}]}}');
+      if (!GlobalVariables.prefs.containsKey("rooms")) {
+        GlobalVariables.prefs.setString("rooms", jsonEncode(Map()));
+      }
+//      GlobalVariables.prefs.setString("rooms",
+//          '{"hostname": {"name":"custom room name", "toggles": [{"name": "name", "pin": 1, "type": "bulb"}, {"name": "name", "pin": 2, "type": "bulb"}], "dimmers": [{"name": "name", "pin": 2, "type": "dimmable LED"}]}}');
       String rooms = GlobalVariables.prefs.getString("rooms");
-      if (rooms != null) {
-        GlobalVariables.rooms = jsonDecode(rooms);
+      GlobalVariables.rooms = jsonDecode(rooms);
+      if (GlobalVariables.rooms.isNotEmpty) {
         GlobalVariables.currentRoom = GlobalVariables.rooms.keys.first;
         setState(() {});
       }
@@ -38,13 +41,13 @@ class _SplashState extends State<Splash> {
   @override
   Widget build(BuildContext context) {
     return new SplashScreen(
-        seconds: 0,
+        seconds: 1,
         navigateAfterSeconds:
-            GlobalVariables.prefs == null ? new Splash() : Dashboard(),
-        title: new Text(
-          'SplashScreen',
-          style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+            GlobalVariables.prefs == null ? new Splash() : LandingPage(),
+        title: Text(
+          "Initializing Smart Home...",
+          style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 30),
         ),
-        loaderColor: Colors.red);
+        loaderColor: Theme.of(context).primaryColor);
   }
 }

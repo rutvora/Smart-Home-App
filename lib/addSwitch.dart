@@ -36,7 +36,8 @@ class _AddTogglesState extends State<AddToggles> {
           physics: NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           children: [
-            Toggle(i, "Pin " + i.toString(), false, (isOn) {
+            Toggle(i, "Pin " + i.toString(),
+                Key("Add Toggle Pin " + i.toString()), false, (isOn) {
               setState(() {
                 on[i] = isOn;
               });
@@ -44,9 +45,7 @@ class _AddTogglesState extends State<AddToggles> {
             FlatButton(
                 color: selected[i]
                     ? Colors.lightGreen
-                    : on[i] ? Colors.lightBlue : Theme
-                    .of(context)
-                    .cardColor,
+                    : on[i] ? Colors.lightBlue : Theme.of(context).cardColor,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 onPressed: () {
                   setState(() {
@@ -58,10 +57,7 @@ class _AddTogglesState extends State<AddToggles> {
                     selected[i] ? Icons.check : Icons.add,
                     color: selected[i] || on[i]
                         ? Colors.white
-                        : Theme
-                        .of(context)
-                        .iconTheme
-                        .color,
+                        : Theme.of(context).iconTheme.color,
                   ),
                   Flexible(
                       child: Center(
@@ -155,31 +151,32 @@ class _AddDimmersState extends State<AddDimmers> {
       if (!pins[i])
         widgets.add(Card(
             child: ListView(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          children: [
-            Dimmer(i, "Pin " + i.toString(), false),
-            FlatButton(
-                color: selected[i]
-                    ? Colors.lightGreen
-                    : Theme
-                    .of(context)
-                    .cardColor,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                onPressed: () {
-                  setState(() {
-                    selected[i] = !selected[i];
-                  });
-                },
-                child: Row(children: [
-                  Icon(
-                    selected[i] ? Icons.check : Icons.add,
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              children: [
+                Dimmer(i, "Pin " + i.toString(),
+                    Key("Add Dimmer Pin " + i.toString()), false),
+                FlatButton(
                     color: selected[i]
-                        ? Colors.white
+                        ? Colors.lightGreen
                         : Theme
                         .of(context)
-                        .iconTheme
-                        .color,
+                        .cardColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onPressed: () {
+                      setState(() {
+                        selected[i] = !selected[i];
+                      });
+                    },
+                    child: Row(children: [
+                      Icon(
+                        selected[i] ? Icons.check : Icons.add,
+                        color: selected[i]
+                            ? Colors.white
+                            : Theme
+                            .of(context)
+                            .iconTheme
+                            .color,
                   ),
                   Expanded(
                       child: Center(
